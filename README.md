@@ -7,7 +7,8 @@ Run: <br>
 docker build -t nodejs-graphql-sqlite-app . <br>
 docker run -p 4000:4000 -d nodejs-graphql-sqlite-app <br>
 
-Test:
+Test: <br>
+In browser, using GraphiQL at http://localhost:4000/graphql
 ```
 mutation {
   createPost(input: { title: "New Post", content: "This is a new post." }) {
