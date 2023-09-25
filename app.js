@@ -5,6 +5,8 @@ const {
   GraphQLObjectType,
   GraphQLString,
   GraphQLList,
+  GraphQLNonNull,
+  GraphQLInputObjectType,
 } = require('graphql');
 const sqlite3 = require('sqlite3').verbose();
 
@@ -25,6 +27,15 @@ const PostType = new GraphQLObjectType({
     id: { type: GraphQLString },
     title: { type: GraphQLString },
     content: { type: GraphQLString },
+  },
+});
+
+// Define a GraphQL input type for creating a new post
+const PostInputType = new GraphQLInputObjectType({
+  name: 'PostInput',
+  fields: {
+    title: { type: GraphQLNonNull(GraphQLString) },
+    content: { type: GraphQLNonNull(GraphQLString) },
   },
 });
 
@@ -54,6 +65,37 @@ const schema = new GraphQLSchema({
       },
     },
   }),
+  mutation: new GraphQLObjectType({
+    name: 'Mutation',
+    fields: {
+      createPost: {
+        type: PostType,
+        args: {
+          input: { type: GraphQLNonNull(PostInputType) },
+        },
+        resolve: (_, { input }, context) => {
+          return new Promise((resolve, reject) => {
+            // Insert the new post into the database
+            db.run(
+              'INSERT INTO posts (title, content) VALUES (?, ?)',
+              [input.title, input.content],
+              function (err) {
+                if (err) {
+                  reject(err);
+                } else {
+                  resolve({
+                    id: this.lastID,
+                    title: input.title,
+                    content: input.content,
+                  });
+                }
+              }
+            );
+          });
+        },
+      },
+    },
+  }),
 });
 
 const app = express();
@@ -63,7 +105,7 @@ app.use(
   '/graphql',
   graphqlHTTP({
     schema,
-    graphiql: true, // Enable GraphiQL for easy testing in your browser
+    graphiql: true, // Enable GraphiQL for easy testing in browser
   })
 );
 
